@@ -1,0 +1,3 @@
+./app/vendor
+.env
+./src/psych_history

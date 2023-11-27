@@ -1,0 +1,58 @@
+services:
+
+  web:
+    image: nginx
+    container_name: recap-server
+    ports:
+      # first 80 = Local port : Second 80 is from the dockers
+      - "81:80"
+    volumes:
+     # In linux, /etc/ is where the configuration files is being stored
+      - ./docker/local/nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf
+
+  app:
+    build: 
+      dockerfile: ./docker/local/php/Dockerfile
+    # Volume, this enables developers to see changes without running up and down again
+    user: "1000:1000"
+    volumes:
+      # /var/www/html - default directory after you exec sh and ls
+      - ./src:/var/www/html
+      # This enables us to run php artisan tinker together with XDG_CONFIG_HOME=/app on .env
+      - ./src:/app/psysh
+    # env_file:
+    #   - ./app/src/.env
+    links:
+      - database
+    depends_on:
+      - database
+    environment:
+      REDIS_HOST: cache
+      REDIS_PORT: ${REDIS_PORT}
+
+  database:
+    image: mysql:8.2.0
+    container_name: recap-mysql
+    # env_file:
+    #   - ./app/src/.env
+    # ${MYSQL_USER} - FROM .env, as long as docker-compose and .env are on the same directory, no need to update anything
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysqldata:/var/lib/mysql
+    # restart - Make sure that it's always up and running
+    # on local, unless-stopped is good to allow us to stop that container
+    restart: unless-stopped
+
+  #redis
+  cache: 
+    image: redis:latest
+
+# volumes that are auto created should be put here
+# volumes that does not start with ./ or are not found inside our app that are being pushed on repository
+volumes:
+  mysqldata:
