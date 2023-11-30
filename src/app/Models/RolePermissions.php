@@ -11,9 +11,8 @@ class RolePermissions extends Model
     use HasFactory;
     protected $guarded = [];
     protected $primaryKey = 'role_permission_id';
-    
+
     /**
-     * 
      *
      * @return BelongsTo
      */
@@ -23,7 +22,6 @@ class RolePermissions extends Model
     }
 
     /**
-     * 
      *
      * @return BelongsTo
      */

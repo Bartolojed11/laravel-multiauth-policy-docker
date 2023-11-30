@@ -65,7 +65,10 @@ return [
     */
 
     'exclude' => [
-        //  'path/to/directory-or-file'
+        'app/Providers',
+        'app/Http/Requests',
+        'app/Http/Middleware',
+        'app/Models',
     ],
 
     'add' => [
@@ -91,6 +94,10 @@ return [
         ForbiddenPrivateMethods::class => [
             'title' => 'The usage of private methods is not idiomatic in Laravel.',
         ],
+        \PHP_CodeSniffer\Standards\Generic\Sniffs\Files\LineLengthSniff::class => [
+            'lineLimit' => 120,
+            'absoluteLineLimit' => 160
+        ]
     ],
 
     /*

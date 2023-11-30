@@ -7,30 +7,31 @@ use App\Actions\Admins\CreateModule;
 use App\Actions\Admins\CreateRole;
 use App\Actions\Admins\CreateRolePermissions;
 use App\Models\Admin;
-use App\Models\Role;
 use App\Models\Module;
+use App\Models\Role;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
 
 class RunInitialSetup implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public string $email;
-    public string $password;
+    protected string $email;
+    protected string $password;
+    protected string $name;
+
     /**
      * Create a new job instance.
      */
-    public function __construct($email, $password)
+    public function __construct($email, $password, $name = 'admin')
     {
         $this->email = $email;
         $this->password = $password;
+        $this->name = $name;
     }
 
     /**
@@ -38,13 +39,15 @@ class RunInitialSetup implements ShouldQueue
      */
     public function handle(): void
     {
-        if (collect(Admin::first())->isNotEmpty() || collect(Role::first())->isNotEmpty()) return;
-
-        // Run only this when there is no admin and roles record
-        $this->createModules();
-        $role = $this->createRole();
-        $this->createRolePermissions($role);
-        $this->createAdmin($role);
+        if (
+            collect(Admin::first())->isEmpty()
+            && collect(Role::first())->isEmpty()
+        ) {
+            $this->createModules();
+            $role = $this->createRole();
+            $this->createRolePermissions($role);
+            $this->createAdmin($role);
+        }
     }
 
     private function createModules(): void
@@ -55,7 +58,7 @@ class RunInitialSetup implements ShouldQueue
     private function createRole(): Role
     {
         return (new CreateRole([
-            'name' => 'super_admin'
+            'name' => 'super_admin',
         ]))->execute();
     }
 
@@ -76,10 +79,10 @@ class RunInitialSetup implements ShouldQueue
     private function createAdmin(Role $role): Admin
     {
         return (new CreateAdmin([
-            'name' => 'admin',
+            'name' => $this->name,
             'email' => $this->email,
             'password' => Hash::make($this->password),
-            'role_id' => $role->role_id
+            'role_id' => $role->role_id,
         ]))->execute();
     }
 }

@@ -13,7 +13,6 @@ class Blog extends Model
     protected $primaryKey = 'blog_id';
 
     /**
-     * 
      *
      * @return BelongsTo
      */
