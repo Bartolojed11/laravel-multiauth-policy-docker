@@ -2,84 +2,38 @@
 
 namespace App\Services\Permissions;
 
+use App\Models\Admin;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Redis;
+use stdClass;
 
 class Permission
 {
-    public const CACHE_PREFIX = 'admin-';
-
-    /**
-     * Check wether a user has permission to read/view specific module
-     *
-     * @param string $module
-     *
-     * @return bool
-     */
-    public function canRead(string $module): bool
-    {
-        return $this->canAccess($module, $this->getModulesActions($module)['read']);
-    }
-
-    /**
-     * Check wether a user has permission to write on specific module
-     *
-     * @param string $module
-     *
-     * @return bool
-     */
-    public function canWrite(string $module): bool
-    {
-        return $this->canAccess($module, $this->getModulesActions($module)['write']);
-    }
-
-    /**
-     * Check wether a user has permission to update specific module
-     *
-     * @param string $module
-     *
-     * @return bool
-     */
-    public function canUpdate(string $module): bool
-    {
-        return $this->canAccess($module, $this->getModulesActions($module)['update']);
-    }
-
-    /**
-     * Check wether a user has permission to delete the specific module
-     *
-     * @param string $module
-     *
-     * @return bool
-     */
-    public function canDelete(string $module): bool
-    {
-        return $this->canAccess($module, $this->getModulesActions($module)['delete']);
-    }
-
     /**
      * Set the value of permission cache
      *
-     * @param string $key
-     * @param mixed $value
+     * @param Admin $user
      *
      * @return void
      */
-    public function set(string $key, mixed $value): void
+    public function set(Admin $user, string $key): void
     {
-        if (Redis::get(self::CACHE_PREFIX . $key)) {
-            Redis::purge(self::CACHE_PREFIX . $key);
+        $permissions = $this->generatePermissions($user);
+        if (Redis::get($key)) {
+            Redis::purge($key);
         }
-        Redis::set(self::CACHE_PREFIX . $key, json_encode($value));
+        Redis::set($key, json_encode($permissions));
     }
 
     /**
      * Get permission cache
      *
-     * @return array
+     * @param string $key
+     * @return stdClass
      */
-    public function getPermissions(): array
+    public function getPermissions(string $key): stdClass
     {
-        $cache = Redis::get($this->cacheKey());
+        $cache = Redis::get($key);
         return $cache ? json_decode($cache) : [];
     }
 
@@ -88,49 +42,32 @@ class Permission
      *
      * @return void
      */
-    public function revoke(): void
+    public function revoke($key): void
     {
-        if (Redis::get($this->cacheKey())) {
-            Redis::purge($this->cacheKey());
+        if (Redis::get($key)) {
+            Redis::purge($key);
         }
     }
 
     /**
-     * Get all the module permissions available
+     * Generate Permissions of logged ni user
      *
-     * @param string $module
-     *
-     * @return array
+     * @param Admin $user
+     * @return Collection
      */
-    private function getModulesActions(string $module): array
+    private function generatePermissions(Admin $user): Collection
     {
-        return config('modules.' . $module . '.permissions');
-    }
-
-    /**
-     * Check if user can access the specified module
-     *
-     * @param string $module
-     * @param string $action
-     *
-     * @return bool
-     */
-    private function canAccess(string $module, string $action): bool
-    {
-        $permissions = $this->getPermissions();
-        if (! $permissions) {
-            return false;
-        }
-        return $permissions[$module][$action] ?? false;
-    }
-
-    /**
-     * Get the cache key for authenticated user
-     *
-     * @return string
-     */
-    private function cacheKey(): string
-    {
-        return self::CACHE_PREFIX . auth()?->user()?->admin_id;
+        $roles_permissions = $user->role()->with('permissions')->get();
+        return collect($roles_permissions->first()->permissions)->mapWithKeys(function ($permission) {
+            $module = $permission->module()->first('name');
+            return [
+                $module->name => [
+                    'read' => $permission->read ?? false,
+                    'write' => $permission->write ?? false,
+                    'update' => $permission->update ?? false,
+                    'delete' => $permission->delete ?? false,
+                ]
+            ];
+        });
     }
 }

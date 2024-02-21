@@ -2,20 +2,23 @@
 
 namespace App\Policies\Admin;
 
-use App\Facades\Permission;
 use App\Models\Admin;
 use App\Models\Blog;
+use App\Policies\Admin\BasePolicy;
 
-class BlogPolicy
+class BlogPolicy extends BasePolicy
 {
-    protected const MODULE = 'blogs';
-
+    public string $module = 'blogs';
+    public function __construct()
+    {
+        parent::__construct();
+    }
     /**
      * Determine whether the admin can view any models.
      */
     public function viewAny(Admin $admin): bool
     {
-        return Permission::canRead(self::MODULE);
+        return $this->moduleAccess->canRead();
     }
 
     /**
@@ -23,7 +26,7 @@ class BlogPolicy
      */
     public function view(Admin $admin, Blog $blog): bool
     {
-        return Permission::canRead(self::MODULE);
+        return $this->moduleAccess->canRead();
     }
 
     /**
@@ -31,7 +34,7 @@ class BlogPolicy
      */
     public function create(Admin $admin): bool
     {
-        return Permission::canWrite(self::MODULE);
+        return $this->moduleAccess->canWrite();
     }
 
     /**
@@ -39,7 +42,7 @@ class BlogPolicy
      */
     public function update(Admin $admin, Blog $blog): bool
     {
-        return Permission::canUpdate(self::MODULE);
+        return $this->moduleAccess->canUpdate();
     }
 
     /**
@@ -47,7 +50,7 @@ class BlogPolicy
      */
     public function delete(Admin $admin, Blog $blog): bool
     {
-        return Permission::canDelete(self::MODULE);
+        return $this->moduleAccess->canDelete();
     }
 
     /**

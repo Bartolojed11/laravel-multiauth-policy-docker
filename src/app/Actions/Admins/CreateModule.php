@@ -9,7 +9,7 @@ class CreateModule
     public function execute()
     {
         collect(config('modules'))->map(function ($module) {
-            Module::updateOrCreate($module['module']['db']);
+            Module::updateOrCreate($module['db']);
         });
     }
 }

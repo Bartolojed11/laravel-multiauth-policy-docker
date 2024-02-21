@@ -16,26 +16,13 @@ class LogInController extends Controller
     {
         $admin = Admin::where('email', $request->email)->first();
 
-        if (! $admin || ! Hash::check($request->password, $admin->password)) {
+        if (!$admin || !Hash::check($request->password, $admin->password)) {
             throw new CustomAuthenticationException();
         }
 
         $token = $admin->createToken('auth-token')->plainTextToken;
 
-        $roles_permissions = $admin->with('role.permissions')->get()->pluck('role');
-        $permissions = collect($roles_permissions->first()->permissions)->map(function ($permission) {
-            $module = $permission->module()->first('name');
-            return [
-                $module->name ?? '' => [
-                    'read' => $permission->read ?? false,
-                    'write' => $permission->write ?? false,
-                    'update' => $permission->update ?? false,
-                    'delete' => $permission->delete ?? false,
-                ],
-            ];
-        });
-
-        Permission::set($admin->admin_id, $permissions);
+        Permission::set($admin, config('cache.admin-key') . $admin->admin_id);
 
         return new LoginResource([
             'access_token' => $token,
