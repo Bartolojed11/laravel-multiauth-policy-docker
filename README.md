@@ -1,6 +1,6 @@
 # basic_docker_php_nginx_config
 
-# laravel-recap
+# laravel-multiauth-policy-docker
 
 # Project Details
 
@@ -13,7 +13,7 @@
 
 ## To set this up, follow steps below
 1. Clone the repository
-2. cd recap
+2. cd laravel-multiauth-policy-docker
 
 ## After cloning and entering on the project directory, run commands below
 1. make build
